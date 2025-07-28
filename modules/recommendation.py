@@ -5,15 +5,31 @@ import os
 import random
 import streamlit as st
 
+# --- FINAL DEPLOYMENT FIX ---
 @st.cache_resource
 def connect_to_spotify():
+    """
+    Creates and caches a Spotipy client.
+    Disables the file-based cache handler when deployed on Streamlit Cloud.
+    """
+    # Check if the app is running on Streamlit Cloud
+    if "STREAMLIT_SERVER_RUNNING" in os.environ:
+        # For deployment, don't use a file-based cache
+        cache_handler = None
+    else:
+        # For local development, use a file-based cache for convenience
+        cache_path = os.path.join(os.path.dirname(__file__), '..', '.spotify_cache')
+        cache_handler = spotipy.CacheFileHandler(cache_path=cache_path)
+
     auth_manager = SpotifyOAuth(
         client_id=os.getenv("SPOTIPY_CLIENT_ID"),
         client_secret=os.getenv("SPOTIPY_CLIENT_SECRET"),
         redirect_uri=os.getenv("SPOTIPY_REDIRECT_URI"),
-        scope=None
+        scope=None,
+        cache_handler=cache_handler # Use the appropriate cache handler
     )
     return spotipy.Spotify(auth_manager=auth_manager)
+
 
 sp = connect_to_spotify()
 
@@ -46,17 +62,16 @@ def get_tracks_for_emotion(emotion, limit=10):
             
             for item in tracks_from_query:
                 if item:
-                    # --- KEY CHANGE: Get the album art URL ---
                     album_art_url = None
                     if item['album']['images']:
-                        album_art_url = item['album']['images'][1]['url'] # Get 300x300 image
+                        album_art_url = item['album']['images'][1]['url']
 
                     all_tracks.append({
                         'name': item['name'],
                         'artist': item['artists'][0]['name'],
                         'preview_url': item.get('preview_url'),
                         'spotify_url': item['external_urls']['spotify'],
-                        'album_art_url': album_art_url # Add it to the dictionary
+                        'album_art_url': album_art_url
                     })
             
             if len(all_tracks) >= limit:
@@ -64,7 +79,7 @@ def get_tracks_for_emotion(emotion, limit=10):
                 
     except Exception as e:
         st.error(f"Could not connect to Spotify.")
-        print(f"SPOTIFY API ERROR: {e}")
+        print(f"SPOTIPY API ERROR: {e}")
         return []
 
     random.shuffle(all_tracks)
