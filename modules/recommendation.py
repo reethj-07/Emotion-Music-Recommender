@@ -5,7 +5,6 @@ import os
 import random
 import streamlit as st
 
-# --- FINAL DEPLOYMENT FIX ---
 @st.cache_resource
 def connect_to_spotify():
     """
@@ -17,7 +16,7 @@ def connect_to_spotify():
         # For deployment, don't use a file-based cache
         cache_handler = None
     else:
-        # For local development, use a file-based cache
+        # For local development, use a file-based cache for convenience
         cache_path = os.path.join(os.path.dirname(__file__), '..', '.spotify_cache')
         cache_handler = spotipy.CacheFileHandler(cache_path=cache_path)
 
