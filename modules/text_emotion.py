@@ -1,38 +1,10 @@
-# from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-# from transformers import pipeline
+# Use VADER to get quick positive/negative/neutral sentiment
+# Use BERT to classify deeper emotions (joy, anger, sadness, etc.)
 
-# # Use VADER to get quick positive/negative/neutral sentiment
-# # Use BERT to classify deeper emotions (joy, anger, sadness, etc.)
-
-# #| Tool                     | Purpose                                          |
-# #| ------------------------ | ------------------------------------------------ |
-# #| **VADER**                | Quick lexicon-based polarity (positive/negative) |
-# #| **BERT (DistilRoBERTa)** | Emotion label (joy, anger, sadness, etc.)        |
-
-
-# # Load VADER sentiment analyzer
-# vader_analyzer = SentimentIntensityAnalyzer()
-
-# # Load BERT emotion classification model from Hugging Face
-# bert_emotion_classifier = pipeline("text-classification", 
-#                                    model="j-hartmann/emotion-english-distilroberta-base", 
-#                                    return_all_scores=True)
-
-# def get_vader_sentiment(text: str) -> str:
-#     scores = vader_analyzer.polarity_scores(text)
-#     compound = scores['compound']
-    
-#     if compound >= 0.05:
-#         return "Positive"
-#     elif compound <= -0.05:
-#         return "Negative"
-#     else:
-#         return "Neutral"
-
-# def get_bert_emotion(text: str) -> str:
-#     result = bert_emotion_classifier(text)[0]
-#     top = max(result, key=lambda x: x['score'])
-#     return f"{top['label']} ({round(top['score'] * 100, 2)}%)"
+#| Tool                     | Purpose                                          |
+#| ------------------------ | ------------------------------------------------ |
+#| **VADER**                | Quick lexicon-based polarity (positive/negative) |
+#| **BERT (DistilRoBERTa)** | Emotion label (joy, anger, sadness, etc.)        |
 
 
 # modules/text_emotion.py
