@@ -5,11 +5,12 @@ import os
 import random
 import streamlit as st
 
+# --- FINAL DEPLOYMENT FIX ---
 @st.cache_resource
 def connect_to_spotify():
     """
     Creates and caches a Spotipy client.
-    Disables the cache handler when deployed on Streamlit Cloud.
+    Disables the file-based cache handler when deployed on Streamlit Cloud.
     """
     # Check if the app is running on Streamlit Cloud
     if "STREAMLIT_SERVER_RUNNING" in os.environ:
@@ -28,7 +29,6 @@ def connect_to_spotify():
         cache_handler=cache_handler # Use the appropriate cache handler
     )
     return spotipy.Spotify(auth_manager=auth_manager)
-
 
 sp = connect_to_spotify()
 
