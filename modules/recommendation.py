@@ -10,14 +10,14 @@ import streamlit as st
 def connect_to_spotify():
     """
     Creates and caches a Spotipy client.
-    Disables the file-based cache handler when deployed on Streamlit Cloud.
+    Disables the cache handler when deployed on Streamlit Cloud.
     """
     # Check if the app is running on Streamlit Cloud
     if "STREAMLIT_SERVER_RUNNING" in os.environ:
         # For deployment, don't use a file-based cache
         cache_handler = None
     else:
-        # For local development, use a file-based cache for convenience
+        # For local development, use a file-based cache
         cache_path = os.path.join(os.path.dirname(__file__), '..', '.spotify_cache')
         cache_handler = spotipy.CacheFileHandler(cache_path=cache_path)
 
