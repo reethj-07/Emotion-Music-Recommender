@@ -5,31 +5,23 @@ import os
 import random
 import streamlit as st
 
-# --- FINAL DEPLOYMENT FIX ---
+# --- FINAL DEPLOYMENT FIX v3: Use MemoryCacheHandler ---
 @st.cache_resource
 def connect_to_spotify():
     """
-    Creates and caches a Spotipy client.
-    Disables the file-based cache handler when deployed on Streamlit Cloud.
+    Creates and caches a Spotipy client using a memory-based cache for deployment.
     """
-    # Check if the app is running on Streamlit Cloud
-    if "STREAMLIT_SERVER_RUNNING" in os.environ:
-        # For deployment, don't use a file-based cache
-        cache_handler = None
-    else:
-        # For local development, use a file-based cache for convenience
-        cache_path = os.path.join(os.path.dirname(__file__), '..', '.spotify_cache')
-        cache_handler = spotipy.CacheFileHandler(cache_path=cache_path)
-
     auth_manager = SpotifyOAuth(
         client_id=os.getenv("SPOTIPY_CLIENT_ID"),
         client_secret=os.getenv("SPOTIPY_CLIENT_SECRET"),
         redirect_uri=os.getenv("SPOTIPY_REDIRECT_URI"),
         scope=None,
-        cache_handler=cache_handler # Use the appropriate cache handler
+        # Use a memory cache handler for Streamlit Cloud
+        cache_handler=spotipy.MemoryCacheHandler()
     )
     return spotipy.Spotify(auth_manager=auth_manager)
 
+# Call the cached function to get the Spotify client
 sp = connect_to_spotify()
 
 emotion_queries = {
@@ -78,7 +70,7 @@ def get_tracks_for_emotion(emotion, limit=10):
                 
     except Exception as e:
         st.error(f"Could not connect to Spotify.")
-        print(f"SPOTIPY API ERROR: {e}")
+        print(f"SPOTIFY API ERROR: {e}")
         return []
 
     random.shuffle(all_tracks)
