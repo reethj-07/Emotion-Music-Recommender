@@ -5,23 +5,45 @@ import os
 import random
 import streamlit as st
 
-# --- FINAL DEPLOYMENT FIX v3: Use MemoryCacheHandler ---
+# --- FINAL DIAGNOSTIC VERSION ---
 @st.cache_resource
 def connect_to_spotify():
     """
-    Creates and caches a Spotipy client using a memory-based cache for deployment.
+    Creates and caches a Spotipy client with extensive logging for debugging.
     """
-    auth_manager = SpotifyOAuth(
-        client_id=os.getenv("SPOTIPY_CLIENT_ID"),
-        client_secret=os.getenv("SPOTIPY_CLIENT_SECRET"),
-        redirect_uri=os.getenv("SPOTIPY_REDIRECT_URI"),
-        scope=None,
-        # Use a memory cache handler for Streamlit Cloud
-        cache_handler=spotipy.MemoryCacheHandler()
-    )
-    return spotipy.Spotify(auth_manager=auth_manager)
+    print("--- DEBUG: Attempting to connect to Spotify ---")
+    
+    # Print the environment variables to ensure they are loaded
+    client_id = os.getenv("SPOTIPY_CLIENT_ID")
+    client_secret = os.getenv("SPOTIPY_CLIENT_SECRET")
+    redirect_uri = os.getenv("SPOTIPY_REDIRECT_URI")
+    
+    print(f"DEBUG: Client ID loaded: {'Yes' if client_id else 'No'}")
+    print(f"DEBUG: Redirect URI loaded: {redirect_uri}")
 
-# Call the cached function to get the Spotify client
+    try:
+        auth_manager = SpotifyOAuth(
+            client_id=client_id,
+            client_secret=client_secret,
+            redirect_uri=redirect_uri,
+            scope=None,
+            cache_handler=spotipy.MemoryCacheHandler()
+        )
+        print("DEBUG: SpotifyOAuth manager created successfully.")
+        
+        sp = spotipy.Spotify(auth_manager=auth_manager)
+        print("DEBUG: spotipy.Spotify client created successfully.")
+        
+        # Test the connection by fetching user info
+        user = sp.me()
+        print(f"DEBUG: Successfully authenticated as Spotify user: {user['display_name']}")
+        
+        return sp
+
+    except Exception as e:
+        print(f"--- FATAL ERROR in connect_to_spotify ---: {e}")
+        st.error("A critical error occurred during Spotify authentication. Check the logs for details.")
+        return None
 sp = connect_to_spotify()
 
 emotion_queries = {
