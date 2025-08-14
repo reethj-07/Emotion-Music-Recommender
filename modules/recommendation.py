@@ -5,7 +5,7 @@ import os
 import random
 import streamlit as st
 
-@st.cache_resource
+@st.cache_resource(max_entries=1, ttl=3600)  # Cache for 1 hour, max 1 instance
 def connect_to_spotify():
     """Connect to Spotify using Client Credentials (no user auth required)"""
     try:
@@ -38,7 +38,6 @@ def connect_to_spotify():
 
 sp = connect_to_spotify()
 
-# Your existing emotion_queries dictionary stays the same
 emotion_queries = {
     "Happy": ["upbeat", "feel good", "party", "happy vibes", "energetic"],
     "Sad": ["sad", "melancholy", "emotional", "heartbreak", "sad bollywood"],
@@ -60,11 +59,7 @@ def get_tracks_for_emotion(emotion, limit=10):
     all_tracks = []
     
     try:
-        # Get user's country, fallback to India
-        try:
-            market = "US"  # Default market, you can change this
-        except:
-            market = "IN"
+        market = "US"  # Default market
         
         for query in queries:
             results = sp.search(q=query, type='track', limit=50, market=market)
