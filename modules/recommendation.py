@@ -1,51 +1,44 @@
 # modules/recommendation.py
 import spotipy
-from spotipy.oauth2 import SpotifyOAuth
+from spotipy.oauth2 import SpotifyClientCredentials
 import os
 import random
 import streamlit as st
 
-# --- FINAL DIAGNOSTIC VERSION ---
 @st.cache_resource
 def connect_to_spotify():
-    """
-    Creates and caches a Spotipy client with extensive logging for debugging.
-    """
-    print("--- DEBUG: Attempting to connect to Spotify ---")
-    
-    # Print the environment variables to ensure they are loaded
-    client_id = os.getenv("SPOTIPY_CLIENT_ID")
-    client_secret = os.getenv("SPOTIPY_CLIENT_SECRET")
-    redirect_uri = os.getenv("SPOTIPY_REDIRECT_URI")
-    
-    print(f"DEBUG: Client ID loaded: {'Yes' if client_id else 'No'}")
-    print(f"DEBUG: Redirect URI loaded: {redirect_uri}")
-
+    """Connect to Spotify using Client Credentials (no user auth required)"""
     try:
-        auth_manager = SpotifyOAuth(
+        # Try to get credentials from Streamlit secrets first, then environment
+        try:
+            client_id = st.secrets["SPOTIPY_CLIENT_ID"]
+            client_secret = st.secrets["SPOTIPY_CLIENT_SECRET"]
+        except:
+            client_id = os.getenv("SPOTIPY_CLIENT_ID")
+            client_secret = os.getenv("SPOTIPY_CLIENT_SECRET")
+        
+        if not client_id or not client_secret:
+            st.error("❌ Spotify credentials not found. Please check your secrets configuration.")
+            return None
+            
+        auth_manager = SpotifyClientCredentials(
             client_id=client_id,
-            client_secret=client_secret,
-            redirect_uri=redirect_uri,
-            scope=None,
-            cache_handler=spotipy.MemoryCacheHandler()
+            client_secret=client_secret
         )
-        print("DEBUG: SpotifyOAuth manager created successfully.")
         
         sp = spotipy.Spotify(auth_manager=auth_manager)
-        print("DEBUG: spotipy.Spotify client created successfully.")
         
-        # Test the connection by fetching user info
-        user = sp.me()
-        print(f"DEBUG: Successfully authenticated as Spotify user: {user['display_name']}")
-        
+        # Test the connection
+        sp.search(q="test", limit=1)
         return sp
-
+        
     except Exception as e:
-        print(f"--- FATAL ERROR in connect_to_spotify ---: {e}")
-        st.error("A critical error occurred during Spotify authentication. Check the logs for details.")
+        st.error(f"❌ Spotify connection failed: {e}")
         return None
+
 sp = connect_to_spotify()
 
+# Your existing emotion_queries dictionary stays the same
 emotion_queries = {
     "Happy": ["upbeat", "feel good", "party", "happy vibes", "energetic"],
     "Sad": ["sad", "melancholy", "emotional", "heartbreak", "sad bollywood"],
@@ -58,27 +51,32 @@ emotion_queries = {
 }
 
 def get_tracks_for_emotion(emotion, limit=10):
+    if sp is None:
+        st.error("❌ Spotify connection not available. Please check your API credentials.")
+        return []
+    
     queries = emotion_queries.get(emotion, ["mood"])
     random.shuffle(queries)
-    
     all_tracks = []
     
     try:
-        market = sp.me()['country']
-    except Exception:
-        market = "IN"
-
-    try:
+        # Get user's country, fallback to India
+        try:
+            market = "US"  # Default market, you can change this
+        except:
+            market = "IN"
+        
         for query in queries:
             results = sp.search(q=query, type='track', limit=50, market=market)
             tracks_from_query = results['tracks']['items']
             
             for item in tracks_from_query:
                 if item:
+                    # Get album art URL
                     album_art_url = None
                     if item['album']['images']:
-                        album_art_url = item['album']['images'][1]['url']
-
+                        album_art_url = item['album']['images'][1]['url'] if len(item['album']['images']) > 1 else item['album']['images'][0]['url']
+                    
                     all_tracks.append({
                         'name': item['name'],
                         'artist': item['artists'][0]['name'],
@@ -86,14 +84,16 @@ def get_tracks_for_emotion(emotion, limit=10):
                         'spotify_url': item['external_urls']['spotify'],
                         'album_art_url': album_art_url
                     })
+                    
+                    if len(all_tracks) >= limit:
+                        break
             
             if len(all_tracks) >= limit:
                 break
                 
     except Exception as e:
-        st.error(f"Could not connect to Spotify.")
-        print(f"SPOTIFY API ERROR: {e}")
+        st.error(f"❌ Could not fetch songs from Spotify: {e}")
         return []
-
+    
     random.shuffle(all_tracks)
     return all_tracks[:limit]
