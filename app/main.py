@@ -178,18 +178,13 @@ with tab3:
         if uploaded_audio:
             st.audio(uploaded_audio)
             audio_file_to_process = uploaded_audio
-    else:  # Record Audio
-        if st.button("Start Recording (5s)", key="voice_record"):
-            with st.spinner("Recording..."):
-                st.session_state.audio_path = record_audio(duration=5)
-                st.success("Recording complete!")
+    else:  # Record Audio - NEW APPROACH
+        st.info("🎤 Click the microphone button below to record your voice:")
+        audio_bytes = st.audio_input("Record your voice for emotion analysis")
         
-        # Always check session state for a recorded file
-        if st.session_state.audio_path and os.path.exists(st.session_state.audio_path):
-            st.write("Your last recording:")
-            with open(st.session_state.audio_path, "rb") as f:
-                st.audio(f.read())
-            audio_file_to_process = st.session_state.audio_path
+        if audio_bytes:
+            st.audio(audio_bytes)
+            audio_file_to_process = audio_bytes
     
     if audio_file_to_process:
         if st.button("Analyze Voice", key="voice_analyze"):
@@ -198,7 +193,7 @@ with tab3:
                     if isinstance(audio_file_to_process, str):  # Path from recording
                         with open(audio_file_to_process, 'rb') as f: 
                             tmp.write(f.read())
-                    else:  # Uploaded file object
+                    else:  # Uploaded file object or audio_input bytes
                         tmp.write(audio_file_to_process.getvalue())
                     
                     emotion = detect_emotion_from_voice(tmp.name)
@@ -212,6 +207,7 @@ with tab3:
                 # Clean up temporary file and memory
                 os.unlink(tmp.name)
                 gc.collect()
+
 
 # --- Music Recommendations ---
 st.markdown("---")
