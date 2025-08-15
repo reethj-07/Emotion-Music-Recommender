@@ -6,6 +6,7 @@ import streamlit as st
 import tempfile
 import gc
 import psutil
+from streamlit_mic_recorder import mic_recorder
 
 # --- Memory Management Setup ---
 @st.cache_resource(max_entries=1)
@@ -178,13 +179,21 @@ with tab3:
         if uploaded_audio:
             st.audio(uploaded_audio)
             audio_file_to_process = uploaded_audio
-    else:  # Record Audio - NEW APPROACH
-        st.info("🎤 Click the microphone button below to record your voice:")
-        audio_bytes = st.audio_input("Record your voice for emotion analysis")
+    else:  # Record Audio - WORKING APPROACH
+        st.info("🎤 Click the button below to record your voice:")
         
-        if audio_bytes:
-            st.audio(audio_bytes)
-            audio_file_to_process = audio_bytes
+        # Using mic_recorder component that works on Streamlit Cloud
+        audio = mic_recorder(
+            start_prompt="🎙️ Start Recording",
+            stop_prompt="⏹️ Stop Recording", 
+            just_once=False,
+            use_container_width=True,
+            key='voice_recorder'
+        )
+        
+        if audio:
+            st.audio(audio['bytes'])
+            audio_file_to_process = audio['bytes']
     
     if audio_file_to_process:
         if st.button("Analyze Voice", key="voice_analyze"):
@@ -193,8 +202,10 @@ with tab3:
                     if isinstance(audio_file_to_process, str):  # Path from recording
                         with open(audio_file_to_process, 'rb') as f: 
                             tmp.write(f.read())
-                    else:  # Uploaded file object or audio_input bytes
+                    elif hasattr(audio_file_to_process, 'getvalue'):  # Uploaded file object
                         tmp.write(audio_file_to_process.getvalue())
+                    else:  # Raw bytes from mic_recorder
+                        tmp.write(audio_file_to_process)
                     
                     emotion = detect_emotion_from_voice(tmp.name)
                     
@@ -207,7 +218,6 @@ with tab3:
                 # Clean up temporary file and memory
                 os.unlink(tmp.name)
                 gc.collect()
-
 
 # --- Music Recommendations ---
 st.markdown("---")
